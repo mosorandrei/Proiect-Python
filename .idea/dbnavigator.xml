@@ -24,12 +24,7 @@
     <autoscroll-to-editor value="false" />
     <autoscroll-from-editor value="true" />
     <show-object-properties value="true" />
-    <loaded-nodes>
-      <connection connection-id="5346cf40-271d-4ff2-9219-43fe0427f700">
-        <schema name="PUBLIC" object-types="synonym, sequence, function, package, type" />
-        <schema name="STUDENT" object-types="table, view, materialized view, synonym, sequence, procedure, function, package, type, database trigger, dimension, cluster, dblink, constraint, index, column, dataset trigger, nested table" />
-      </connection>
-    </loaded-nodes>
+    <loaded-nodes />
   </component>
   <component name="DBNavigator.Project.DatabaseConsoleManager">
     <connection id="5346cf40-271d-4ff2-9219-43fe0427f700">
