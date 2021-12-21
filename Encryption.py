@@ -1,35 +1,19 @@
-from cryptography.fernet import Fernet
+import rsa
 
-key = Fernet.generate_key()
+publicKey, privateKey = rsa.newkeys(512)
 
-with open('filekey.key', 'wb') as fk:
-    fk.write(key)
+f = open("test.txt", "rb")
+message = f.read()
 
-with open('filekey.key', 'rb') as fk:
-    key = fk.read()
+encMessage = rsa.encrypt(str(message).encode(),
+                         publicKey)
 
-fernet = Fernet(key)
+print("original string: ", message)
+print("encrypted string: ", encMessage)
 
-with open('TestFile.txt', 'rb') as f:
-    original = f.read()
+enc_f = open("encrypted_file.txt", "wb")
+enc_f.write(encMessage)
 
-print(original)
+decMessage = rsa.decrypt(encMessage, privateKey).decode()
 
-encrypted = fernet.encrypt(original)
-
-with open('TestFile.txt', 'wb') as encrypted_file:
-    encrypted_file.write(encrypted)
-
-print(encrypted)
-
-fernet = Fernet(key)
-
-with open('TestFile.txt', 'rb') as enc_file:
-    encrypted = enc_file.read()
-
-decrypted = fernet.decrypt(encrypted)
-
-with open('TestFile.txt', 'wb') as dec_file:
-    dec_file.write(decrypted)
-
-print(decrypted)
+print("decrypted string: ", decMessage)
