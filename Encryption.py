@@ -1,9 +1,11 @@
+import math
+
 import sympy
 import random
 
 
 def generate_large_prime():
-    current_prime = sympy.randprime(2 ** 511, 2 ** 1024)
+    current_prime = sympy.randprime(2 ** 10, 2 ** 20)
     return current_prime
 
 
@@ -58,4 +60,7 @@ def rsa_encryption(plain_text):
     return encrypted_text, d, e
 
 
-print(rsa_encryption(int.from_bytes("continutul fisierului meu".encode(), byteorder='little')))
+#print(rsa_encryption(int.from_bytes("continutul fisierului meu".encode(), byteorder='little')))
+#i = int.from_bytes("continutul fisierului meu".encode(), byteorder='little')
+#length = math.ceil(i.bit_length() / 8)
+#print(i.to_bytes(length, byteorder='little').decode())
