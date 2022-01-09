@@ -2,40 +2,35 @@ import math
 import random
 import os
 import time
-
 import cx_Oracle
-import Encryption as ENC
+import Encryption as Enc
 
 dsn_tns = cx_Oracle.makedsn('localhost', '1521', service_name='XE')
 conn = cx_Oracle.connect(user=r'STUDENT', password='STUDENT', dsn=dsn_tns)
 c = conn.cursor()
 add_counter = 0
 c.execute('select * from filedatabase')
+
 for row in c:
     print(row)
-    add_counter = add_counter + 1
-
-print(add_counter)
 
 
 def add(params):
-    print(params)
-    global add_counter
-    dsn_tns_enc = cx_Oracle.makedsn('localhost', '1521', service_name='XE')
-    conn_enc = cx_Oracle.connect(user=r'STUDENT', password='STUDENT', dsn=dsn_tns_enc)
-    p = ENC.generate_large_prime()
-    q = ENC.generate_large_prime()
+    global add_counter, dsn_tns, conn
+
+    p = Enc.generate_large_prime()
+    q = Enc.generate_large_prime()
     n = p * q
     phi = (p - 1) * (q - 1)
 
     e = random.randint(2, 2 ** 32)
     # phi and e must be coprime and e < phi
     while True:
-        if ENC.gcd(phi, e) == 1 and e < phi:
+        if Enc.gcd(phi, e) == 1 and e < phi:
             break
         e = random.randint(2, 2 ** 32)
 
-    d = ENC.modular_multiplicative_inverse(e, phi)
+    d = Enc.modular_multiplicative_inverse(e, phi)
     # here we print the private key only for testing purposes
     print(d)
     ciphertext = ""
@@ -43,18 +38,27 @@ def add(params):
         file = open(params[1], "r")
         plain_text = file.read()
         file.close()
-        if len(plain_text) % 4 != 0 :
-            for i in range(4-(len(plain_text) % 4)):
+        if len(plain_text) % 4 != 0:
+            for i in range(4 - (len(plain_text) % 4)):
                 plain_text = plain_text + " "
 
         for i in range(0, len(plain_text), 4):
-            part = plain_text[i:i+4]
+            part = plain_text[i:i + 4]
             int_plain_text = int.from_bytes(part.encode(), byteorder='little')
             encrypted_text = pow(int_plain_text, e, n)
             ciphertext = ciphertext + str(encrypted_text) + "\n"
 
+        add_counter = random.randint(0, 1000)
+        cr = conn.cursor()
+        cr.execute('select * from filedatabase')
+        ok = 1
+        while ok == 1:
+            ok = 0
+            for r in cr:
+                if r[0] == add_counter:
+                    add_counter = random.randint(0, 1000)
+                    ok = 1
         encrypted_file = open("EncryptedFiles\\file" + str(add_counter) + ".txt", "w")
-        add_counter = add_counter + 1
         encrypted_file.write(ciphertext)
         encrypted_file.close()
 
@@ -64,43 +68,70 @@ def add(params):
         return
 
     name, extension = os.path.splitext(params[1])
-    c_enc = conn_enc.cursor()
+    c_enc = conn.cursor()
     sql = """insert into filedatabase 
           values (:f_id, :f_name, :f_type, :f_size, :f_changed, :f_modified, :f_accessed, :f_public_key, 
           :f_product_prime)"""
     c_enc.execute(sql, [add_counter, name, extension, os.path.getsize(params[1]),
                         str(time.ctime(os.path.getctime(params[1]))), str(time.ctime(os.path.getmtime(params[1]))),
                         str(time.ctime(os.path.getatime(params[1]))), str(e), str(n)])
-    conn_enc.commit()
+    conn.commit()
     os.remove(params[1])
 
 
 def show(params):
-    print(params)
-    dsn_tns_dec = cx_Oracle.makedsn('localhost', '1521', service_name='XE')
-    conn_dec = cx_Oracle.connect(user=r'STUDENT', password='STUDENT', dsn=dsn_tns_dec)
+    global dsn_tns, conn
+    print("###")
+    print("Careful! In order to decrypt your file properly you must provide the right secret key,"
+          "otherwise, you will get a wrong output! ")
+    print("###")
     d = int(input("----Enter the secret key: "))
+
     file_name = params[-1].split(".")[0]
     file_id = ""
-    c_dec = conn_dec.cursor()
+    c_dec = conn.cursor()
     sql = "select * from filedatabase where file_name = :f_name"
     c_dec.execute(sql, f_name=file_name)
+    n = 0
+    rows_list = []
     for rand in c_dec:
-        print("########################")
-        print("The information about your file is:")
-        print("The id of the file is : " + str(rand[0]))
-        print("The original name of the file is: " + str(rand[1]))
-        print("The extension of the file is: " + str(rand[2]))
-        print("The size of the file is: " + str(rand[3]))
-        print("The creation date is: " + str(rand[4]))
-        print("The last modification date is: " + str(rand[5]))
-        print("The last access date is: " + str(rand[6]))
-        print("The public key is: " + str(rand[4]))
-        print("########################")
-        n = int(rand[-1])
         file_id = rand[0]
+        n = int(rand[-1])
+        rows_list.append((rand, n, file_id))
 
-    file_id = file_id - 1
+    if len(rows_list) == 0:
+        print("The name of the file you requested is not in our database! Please check again the name and try again!")
+        return
+
+    if len(rows_list) > 1:
+        file_id = int(input("There are multiple files in the database with the name you provided! "
+                            "Please provide the id of your file: "))
+
+    ok = 0
+    for r in rows_list:
+        if r[2] == file_id:
+            ok = 1
+            print("########################")
+            rand = r[0]
+            n = int(rand[-1])
+            print("The information about your file is:")
+            print("The id of the file is : " + str(rand[0]))
+            print("The original name of the file is: " + str(rand[1]))
+            print("The extension of the file is: " + str(rand[2]))
+            print("The size of the file is: " + str(rand[3]))
+            print("The creation date is: " + str(rand[4]))
+            print("The last modification date is: " + str(rand[5]))
+            print("The last access date is: " + str(rand[6]))
+            print("The public key is: " + str(rand[7]))
+            print("########################")
+            break
+
+    if ok == 0:
+        print("###")
+        print("The id you provided is not in our database! Please try again!")
+        print("###")
+        return
+
     plaint_text = ""
     encrypted_file = open("EncryptedFiles\\file" + str(file_id) + ".txt", "r")
     encrypted_text = encrypted_file.read()
@@ -117,7 +148,47 @@ def show(params):
 
 
 def remove(params):
-    print(params)
+    global dsn_tns, conn
+    file_name = params[-1].split(".")[0]
+    file_id = ""
+    c_rem = conn.cursor()
+    sql = "select * from filedatabase where file_name = :f_name"
+    c_rem.execute(sql, f_name=file_name)
+    rows_list = []
+    for rand in c_rem:
+        file_id = rand[0]
+        rows_list.append(file_id)
+    if len(rows_list) == 0:
+        print("The name of the file you requested to delete is not in our database!"
+              " Please check again the name and try again!")
+        return
+
+    if len(rows_list) > 1:
+        file_id = int(input("There are multiple files in the database with the name you provided! "
+                            "Please provide the id of your file you want to delete"
+                            ": "))
+
+    cd = conn.cursor()
+    cd.execute('select * from filedatabase')
+    ok = 0
+    for r in cd:
+        if r[0] == file_id:
+            ok = 1
+            break
+
+    if ok == 0:
+        print("###")
+        print("The id you provided is not in our database! Please try again!")
+        print("###")
+        return
+
+    c_rem = conn.cursor()
+    sql = "delete from filedatabase where file_name = :f_name and file_id = :f_id"
+    c_rem.execute(sql, f_name=file_name, f_id=file_id)
+    conn.commit()
+    os.remove("EncryptedFiles\\file" + str(file_id) + ".txt")
+
+    print("The file " + str(params[1]) + " was deleted successfully")
 
 
 def handle_command(params):
