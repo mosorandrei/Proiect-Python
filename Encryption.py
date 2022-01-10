@@ -1,15 +1,23 @@
-import math
-
 import sympy
 import random
 
 
 def generate_large_prime():
+    """
+    :return: a random prime number which will be used in the RSA algorithm
+    """
     current_prime = sympy.randprime(2 ** 16, 2 ** 32)
     return current_prime
 
 
 def modular_multiplicative_inverse(a, mod_value):
+    """
+    A function to compute the modular multiplicative inverse of a number
+    :param a: the number we want to compute the inverse for
+    :param mod_value: the congruence class
+    :return: x: the multiplicative inverse such that a * x = 1 mod mod_value
+    """
+
     x = 0
     x0 = 1
     r = mod_value
@@ -29,21 +37,32 @@ def modular_multiplicative_inverse(a, mod_value):
 
 
 def gcd(a, n):
+    """
+    A function to compute the greatest common divisor of two numbers
+    :param a: number 1
+    :param n: number 2
+    :return: the greatest common divisor
+    """
+
     while n != 0:
         a, n = n, a % n
     return a
 
 
 def rsa_encryption(plain_text):
+    """
+    A function to implement the RSA algorithm, both encryption and decryption.
+    :param plain_text:
+    :return:
+    """
     p = generate_large_prime()
     q = generate_large_prime()
     n = p * q
     phi = (p - 1) * (q - 1)
 
     e = random.randint(2, 2 ** 32)
-    # phi and e must be coprime and e < phi
     while True:
-        if gcd(phi, e) == 1 and e < phi:
+        if gcd(phi, e) == 1 and e < phi:  # phi and e must be co-prime and e < phi
             break
         e = random.randint(2, 2 ** 32)
 
@@ -58,11 +77,3 @@ def rsa_encryption(plain_text):
     print("Decrypted text: " + str(plain_text_from_encrypted_text))
     print("\n\n")
     return encrypted_text, d, e
-
-
-# print("milm".encode())
-# print(rsa_encryption(int.from_bytes("conti".encode(), byteorder='little')))
-# print(int.from_bytes("milm".encode(), byteorder='little'))
-# i = 7954885716023865187
-# length = math.ceil(i.bit_length() / 8)
-# print(i.to_bytes(length, byteorder='little').decode())
