@@ -1,5 +1,5 @@
 Aplicatia are urmatoarele comenzi :
     - add "file" : adauga metadatele lui "file" in baza de date precum si fisierul criptat in folder
     - remove "file" : sterge metadatele fisierului cu numele file din baza de date , precum si fisierul criptat din folder
-    - show content of "file" : arata continutul fisierului cu numele file
+    - show content of "file" : arata continutul fisierului cu numele file ( uita-te in baza de date ca sa vezi numele initial )
     - exit : iese din aplicatie
